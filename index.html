@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>恋のセーフゾーン - 連絡頻度すり合わせカードゲーム</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti for Celebration Effects -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 50%, #f0fdf4 100%);
+            min-height: 100vh;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .card-shadow {
+            box-shadow: 0 10px 25px -5px rgba(244, 63, 94, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        .pulse-gentle {
+            animation: pulse-animation 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-animation {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #e11d48, #9333ea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col items-center justify-between min-h-screen p-4 sm:p-6">
+
+    <header class="w-full max-w-lg flex items-center justify-between py-3 mb-2">
+        <div class="flex items-center gap-2 cursor-pointer" onclick="goHome()">
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 to-rose-400 flex items-center justify-center text-white shadow-md">
+                <i class="fa-solid font-bold fa-heart-circle-check text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold gradient-text tracking-wide leading-tight">恋のセーフゾーン</h1>
+                <p class="text-[10px] text-slate-500 font-semibold">お互いの心地よい距離感を見つけよう</p>
+            </div>
+        </div>
+        <button id="reset-btn" onclick="goHome()" class="hidden px-3 py-1.5 text-xs font-semibold text-slate-500 bg-white/85 hover:bg-white border border-slate-200 rounded-full shadow-sm transition">
+            <i class="fa-solid fa-house mr-1"></i>最初から
+        </button>
+    </header>
+
+    <main class="w-full max-w-lg flex-1 flex flex-col justify-center my-auto">
+
+        <!-- Home View -->
+        <div id="view-home" class="space-y-6 text-center animate-fade-in">
+            <div class="bg-white/95 backdrop-blur-md rounded-3xl p-6 card-shadow border border-rose-100">
+                <div class="inline-block p-4 bg-rose-50 text-rose-500 rounded-full mb-3 pulse-gentle">
+                    <i class="fa-solid fa-comments text-4xl"></i>
+                </div>
+                <h2 class="text-2xl font-extrabold text-slate-800 mb-2">本音で話せるカードゲーム</h2>
+                <p class="text-xs sm:text-sm text-slate-600 leading-relaxed mb-6">
+                    「おはようLINEは必要？」「休日の返信速度は？」<br>
+                    言いづらい連絡の価値観を、ゲーム感覚で角を立てずに楽しくすり合わせましょう！
+                </p>
+
+                <!-- GAME MODES -->
+                <div class="space-y-3">
+                    <button onclick="startGame('couple')" class="w-full py-4 px-6 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition transform active:scale-95 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-base"><i class="fa-solid fa-users"></i></span>
+                            <div class="text-left">
+                                <div class="text-base">ふたりで遊ぶ (1台のスマホ)</div>
+                                <div class="text-[11px] font-normal opacity-90">交代でカードを選んでマッチ度チェック</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+
+                    <button onclick="startGame('solo')" class="w-full py-3.5 px-6 bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-2xl border border-slate-200 shadow-sm transition transform active:scale-95 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center text-base"><i class="fa-solid fa-robot"></i></span>
+                            <div class="text-left">
+                                <div class="text-sm">AIパートナーとおためし</div>
+                                <div class="text-[10px] font-normal text-slate-500">「かまって彼氏」の反応をシミュレーション</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-400"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- FAQ Accordion -->
+            <div class="bg-white/60 rounded-2xl p-4 border border-rose-100/50 text-left">
+                <h3 class="text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                    <i class="fa-solid fa-lightbulb text-amber-500"></i> なぜこれでうまくいきやすいの？
+                </h3>
+                <p class="text-[11px] text-slate-600 leading-normal">
+                    「選択肢」として出すことで「私を嫌いだから連絡を減らしたいわけじゃない」とお互いに理解しやすくなります。スコア化されて改善アドバイスも一緒に見られます！
+                </p>
+            </div>
+        </div>
+
+        <!-- Pass Phone View -->
+        <div id="view-pass" class="hidden text-center space-y-6">
+            <div class="bg-white rounded-3xl p-8 card-shadow border border-rose-100 flex flex-col items-center">
+                <div class="w-20 h-20 bg-rose-100 rounded-full flex items-center justify-center text-rose-500 text-3xl mb-4 pulse-gentle">
+                    <i id="pass-icon" class="fa-solid fa-mobile-screen-button"></i>
+                </div>
+                <h3 id="pass-title" class="text-xl font-bold text-slate-800 mb-2">スマホをパートナーへ渡してください</h3>
+                <p id="pass-desc" class="text-xs text-slate-500 mb-6">相手に自分の回答が見えないよう、準備ができたら進んでね！</p>
+                <button onclick="startTurn()" class="w-full py-4 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-2xl shadow-md transition transform active:scale-95">
+                    準備OK！カードを選ぶ
+                </button>
+            </div>
+        </div>
+
+        <!-- Question View -->
+        <div id="view-question" class="hidden space-y-4">
+            <!-- Progress Bar -->
+            <div class="bg-white/80 rounded-2xl p-3 border border-rose-100 flex items-center gap-3 shadow-sm">
+                <span id="current-player-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-rose-500 text-white shadow-xs">
+                    プレイヤー1
+                </span>
+                <div class="flex-1 bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="bg-gradient-to-r from-rose-400 to-pink-500 h-full w-1/5 transition-all duration-300"></div>
+                </div>
+                <span id="question-count" class="text-xs font-bold text-slate-500">Q.1 / 5</span>
+            </div>
+
+            <!-- Question Card -->
+            <div class="bg-white rounded-3xl p-6 card-shadow border border-rose-100 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <span id="question-category" class="text-xs font-bold px-2.5 py-0.5 rounded-md bg-rose-50 text-rose-600">
+                        朝夜の挨拶
+                    </span>
+                    <span class="text-[11px] text-slate-400 font-semibold"><i class="fa-solid fa-hand-pointer mr-1"></i>直感で選びましょう</span>
+                </div>
+
+                <h3 id="question-title" class="text-base sm:text-lg font-bold text-slate-800 leading-snug">
+                    「おはよう」「おやすみ」などの毎日の挨拶LINE、ぶっちゃけどう？
+                </h3>
+
+                <!-- Options Grid -->
+                <div id="options-container" class="space-y-2.5 pt-2">
+                    <!-- Dynamic rendering of options -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Result View -->
+        <div id="view-result" class="hidden space-y-5 animate-fade-in pb-8">
+            <!-- Match Score Header Card -->
+            <div class="bg-white rounded-3xl p-6 card-shadow border border-rose-100 text-center relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-28 h-28 bg-rose-100/50 rounded-full blur-xl pointer-events-none"></div>
+                
+                <span class="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600 tracking-wider">診断結果</span>
+                <h2 id="result-title" class="text-2xl font-extrabold text-slate-800 mt-2 mb-1">快適セーフゾーン！</h2>
+                <p id="result-subtitle" class="text-xs text-slate-500 mb-4">お互いの本音から分かった連絡相性</p>
+
+                <!-- Score Circle / Badge -->
+                <div class="my-4 flex items-center justify-center">
+                    <div class="relative w-32 h-32 flex items-center justify-center rounded-full bg-gradient-to-tr from-rose-500 to-pink-400 text-white shadow-lg">
+                        <div class="text-center">
+                            <span id="match-score" class="text-4xl font-extrabold tracking-tight">85</span>
+                            <span class="text-lg font-bold">%</span>
+                            <div class="text-[10px] font-semibold opacity-90">一致度</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advice Tag -->
+                <div id="result-summary-box" class="p-3.5 bg-rose-50 rounded-2xl text-left border border-rose-100">
+                    <p id="result-advice" class="text-xs text-slate-700 leading-relaxed font-medium">
+                        お互いに程よい距離感を尊重できているグッドバランス！少しの工夫でもっとストレスフリーになれます。
+                    </p>
+                </div>
+            </div>
+
+            <!-- Detailed Breakdown Accordion List -->
+            <div class="bg-white rounded-3xl p-5 card-shadow border border-rose-100 space-y-4">
+                <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center justify-between">
+                    <span><i class="fa-solid fa-magnifying-glass-heart text-rose-500 mr-1.5"></i>本音の答え合わせ</span>
+                    <span class="text-[10px] font-normal text-slate-400">タップで詳細</span>
+                </h3>
+
+                <div id="breakdown-list" class="space-y-3">
+                    <!-- Dynamic Answer Comparisons -->
+                </div>
+            </div>
+
+            <!-- Safe Zone Promise Card -->
+            <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl p-5 card-shadow space-y-3">
+                <div class="flex items-center gap-2 text-rose-400">
+                    <i class="fa-solid fa-handshake text-lg"></i>
+                    <h3 class="text-sm font-bold">ふたりの「恋のセーフゾーン約束」</h3>
+                </div>
+                <ul id="promise-list" class="space-y-2 text-xs text-slate-200">
+                    <!-- Dynamic promise rules generated from answers -->
+                </ul>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3">
+                <button onclick="shareResult()" class="flex-1 py-3.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-2xl shadow-md transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-copy"></i> 結果文面をコピー
+                </button>
+                <button onclick="goHome()" class="flex-1 py-3.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-2xl shadow-md transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-rotate-right"></i> もう一度遊ぶ
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="w-full max-w-lg text-center py-3 text-[11px] text-slate-400">
+        恋のセーフゾーン &copy; 2026 - 思いやりと心地よい距離感のために
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-4 py-2.5 rounded-full text-xs font-semibold shadow-xl opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-msg">コピーしました！</span>
+    </div>
+
+    <script>
+        // Questions Data
+        const questions = [
+            {
+                id: 1,
+                category: "朝・夜の挨拶",
+                title: "「おはよう」「おやすみ」の日常挨拶LINE、どう思ってる？",
+                options: [
+                    { score: 3, label: "毎日絶対にほしい！ないと不安", icon: "🥰", rule: "毎日の挨拶LINEは大切な時間！" },
+                    { score: 2, label: "できれば毎日ほしいけど、忘れてもOK", icon: "🙂", rule: "挨拶は送れたら送るくらいのゆるいペースで" },
+                    { score: 1, label: "特にいらない。用事がある時だけで十分", icon: "😌", rule: "挨拶LINEは省略OK！用事がある時連絡しよう" },
+                    { score: 0, label: "返信の義務感を感じて疲れてしまう", icon: "😮‍💨", rule: "挨拶LINEは基本ナシ！お互いマイペースに過ごそう" }
+                ]
+            },
+            {
+                id: 2,
+                category: "日中の状況報告",
+                title: "「休憩入った」「今お家帰った」等の行動報告LINEは？",
+                options: [
+                    { score: 3, label: "こまめに知りたい！お互い報告し合いたい", icon: "📲", rule: "日中の報告はお互い積極的に共有！" },
+                    { score: 2, label: "余裕がある時に教えてくれると嬉しい", icon: "👍", rule: "報告は余裕がある時だけ、返信不要でOK" },
+                    { score: 1, label: "自分の時間に集中したいから少なめがいい", icon: "☕", rule: "日中はそれぞれの時間を優先しよう" },
+                    { score: 0, label: "監視されてるように感じてちょっと重い", icon: "🔓", rule: "行動報告は求めず、自由を尊重しよう" }
+                ]
+            },
+            {
+                id: 3,
+                category: "返信スピード",
+                title: "LINEが来てから返信するまでの「理想のペース」は？",
+                options: [
+                    { score: 3, label: "気づいたら数分以内にすぐ返したい・ほしい", icon: "⚡", rule: "できる限りテンポよく返信！" },
+                    { score: 2, label: "数時間以内（その日のうち）に返せばOK", icon: "⏰", rule: "返信はその日のうちにまったり返せばOK" },
+                    { score: 1, label: "1日1〜2回、落ち着いた時間にまとめて返したい", icon: "🌙", rule: "返信は夜などにまとめて1日1〜2回でOK" },
+                    { score: 0, label: "会う約束さえ決まっていれば連絡は放置でもOK", icon: "🕊️", rule: "急ぎの用事以外は既読スルー・遅め返信も全然OK" }
+                ]
+            },
+            {
+                id: 4,
+                category: "スタンプ・短文リアクション",
+                title: "スタンプ1個や「👍」だけの返信ってどう思う？",
+                options: [
+                    { score: 3, label: "手抜きに感じるからちゃんと言葉で返してほしい", icon: "💬", rule: "短文やスタンプだけでなく言葉も添えよう" },
+                    { score: 2, label: "会話が終わるタイミングならスタンプでOK", icon: "👌", rule: "切り区切りにはスタンプを使って会話を締めよう" },
+                    { score: 1, label: "むしろスタンプだけでサクッと終わらせたい", icon: "✨", rule: "スタンプ1個で済ませる省エネ連絡を歓迎しよう" },
+                    { score: 0, label: "「了解！」のリアクションだけで済むと最高に楽", icon: "🙌", rule: "リアクション機能を活用して気軽に会話を終えよう" }
+                ]
+            },
+            {
+                id: 5,
+                category: "会わない期間の繋がり",
+                title: "次に会う日までの間の連絡頻度はどのくらいが理想？",
+                options: [
+                    { score: 3, label: "毎日会話を続けたい！", icon: "💬", rule: "会えない間も毎日楽しくやり取りしよう" },
+                    { score: 2, label: "2〜3日に1回くらい何気ない雑談がしたい", icon: "🌱", rule: "2〜3日に1回ペースで雑談しよう" },
+                    { score: 1, label: "会う日程や場所を決める連絡だけで十分", icon: "📅", rule: "普段の連絡は控えめに、デートの約束を重視しよう" },
+                    { score: 0, label: "会った時にたくさん話したいからLINEはほぼゼロで良い", icon: "🎁", rule: "LINEで話しすぎず、会った時の楽しみをとっておこう" }
+                ]
+            }
+        ];
+
+        // AI Partner Preset Responses (Simulated 'かまって彼氏')
+        const aiAnswers = [3, 3, 2, 2, 3];
+
+        // App State
+        let gameMode = 'couple';
+        let currentPlayer = 1;
+        let currentQuestionIdx = 0;
+        let player1Answers = [];
+        let player2Answers = [];
+
+        // DOM Element References
+        const viewHome = document.getElementById('view-home');
+        const viewPass = document.getElementById('view-pass');
+        const viewQuestion = document.getElementById('view-question');
+        const viewResult = document.getElementById('view-result');
+        const resetBtn = document.getElementById('reset-btn');
+
+        function goHome() {
+            gameMode = 'couple';
+            currentPlayer = 1;
+            currentQuestionIdx = 0;
+            player1Answers = [];
+            player2Answers = [];
+
+            viewHome.classList.remove('hidden');
+            viewPass.classList.add('hidden');
+            viewQuestion.classList.add('hidden');
+            viewResult.classList.add('hidden');
+            resetBtn.classList.add('hidden');
+        }
+
+        function startGame(mode) {
+            gameMode = mode;
+            currentPlayer = 1;
+            currentQuestionIdx = 0;
+            player1Answers = [];
+            player2Answers = [];
+
+            resetBtn.classList.remove('hidden');
+            viewHome.classList.add('hidden');
+
+            renderQuestion();
+            viewQuestion.classList.remove('hidden');
+        }
+
+        function renderQuestion() {
+            const q = questions[currentQuestionIdx];
+            
+            document.getElementById('question-category').innerText = q.category;
+            document.getElementById('question-title').innerText = q.title;
+            document.getElementById('question-count').innerText = `Q.${currentQuestionIdx + 1} / ${questions.length}`;
+            
+            const totalSteps = questions.length * (gameMode === 'couple' ? 2 : 1);
+            const currentStep = (currentPlayer === 1 ? currentQuestionIdx : questions.length + currentQuestionIdx) + 1;
+            const progressPercent = Math.round((currentStep / totalSteps) * 100);
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+            const badge = document.getElementById('current-player-badge');
+            if (gameMode === 'couple') {
+                badge.innerText = `プレイヤー ${currentPlayer}`;
+                badge.className = currentPlayer === 1 
+                    ? "px-3 py-1 rounded-full text-xs font-bold bg-rose-500 text-white shadow-xs"
+                    : "px-3 py-1 rounded-full text-xs font-bold bg-indigo-500 text-white shadow-xs";
+            } else {
+                badge.innerText = "あなた";
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-rose-500 text-white shadow-xs";
+            }
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-3.5 bg-slate-50 hover:bg-rose-50/80 border border-slate-200 hover:border-rose-300 rounded-2xl text-left transition transform active:scale-98 flex items-center gap-3 group";
+                btn.onclick = () => selectOption(idx);
+                btn.innerHTML = `
+                    <span class="text-2xl p-2 bg-white rounded-xl shadow-xs border border-slate-100 group-hover:scale-110 transition-transform">${opt.icon}</span>
+                    <span class="text-xs sm:text-sm font-semibold text-slate-700 group-hover:text-rose-600 flex-1">${opt.label}</span>
+                    <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-rose-400 text-xs"></i>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function selectOption(optionIndex) {
+            if (currentPlayer === 1) {
+                player1Answers.push(optionIndex);
+            } else {
+                player2Answers.push(optionIndex);
+            }
+
+            currentQuestionIdx++;
+
+            if (currentQuestionIdx < questions.length) {
+                renderQuestion();
+            } else {
+                if (gameMode === 'couple' && currentPlayer === 1) {
+                    currentPlayer = 2;
+                    currentQuestionIdx = 0;
+                    showPassScreen();
+                } else {
+                    if (gameMode === 'solo') {
+                        player2Answers = aiAnswers;
+                    }
+                    showResults();
+                }
+            }
+        }
+
+        function showPassScreen() {
+            viewQuestion.classList.add('hidden');
+            
+            document.getElementById('pass-title').innerText = "スマホをパートナー(プレイヤー2)へ渡してください";
+            document.getElementById('pass-desc').innerText = "お互いの解答を見ずに直感で選んでもらうため、準備ができたらボタンを押してね！";
+            document.getElementById('pass-icon').className = "fa-solid fa-user-check";
+
+            viewPass.classList.remove('hidden');
+        }
+
+        function startTurn() {
+            viewPass.classList.add('hidden');
+            renderQuestion();
+            viewQuestion.classList.remove('hidden');
+        }
+
+        function showResults() {
+            viewQuestion.classList.add('hidden');
+
+            let totalDiff = 0;
+            const maxPossibleDiff = questions.length * 3;
+
+            for (let i = 0; i < questions.length; i++) {
+                const score1 = questions[i].options[player1Answers[i]].score;
+                const score2 = questions[i].options[player2Answers[i]].score;
+                totalDiff += Math.abs(score1 - score2);
+            }
+
+            const matchScore = Math.max(20, Math.round(100 - (totalDiff / maxPossibleDiff) * 80));
+
+            document.getElementById('match-score').innerText = matchScore;
+
+            const titleEl = document.getElementById('result-title');
+            const adviceEl = document.getElementById('result-advice');
+
+            if (matchScore >= 85) {
+                titleEl.innerText = "超快適！テレパシーゾーン 🎉";
+                adviceEl.innerText = "お互いの連絡に対する価値観がバッチリ一致！お互い無理のないベストな距離感を保てています。このままのペースを楽しんで！";
+            } else if (matchScore >= 65) {
+                titleEl.innerText = "安心！すり合わせセーフゾーン 🌿";
+                adviceEl.innerText = "基本的な感覚はとても近いです！いくつか連絡頻度の希望に差がある部分をルール化すれば、もっとお互い心地よくなります。";
+            } else {
+                titleEl.innerText = "伸びしろアリ！お互い歩み寄りゾーン 🤝";
+                adviceEl.innerText = "一方は「こまめに繋がっていたい」、もう一方は「自分の時間も大事にしたい」傾向があるかも。下の『約束』を参考にすり合わせよう！";
+            }
+
+            if (matchScore >= 70 && typeof confetti === 'function') {
+                confetti({
+                    particleCount: 80,
+                    spread: 60,
+                    origin: { y: 0.6 }
+                });
+            }
+
+            const breakdownList = document.getElementById('breakdown-list');
+            breakdownList.innerHTML = '';
+
+            const promises = [];
+
+            questions.forEach((q, idx) => {
+                const opt1 = q.options[player1Answers[idx]];
+                const opt2 = q.options[player2Answers[idx]];
+                const isMatch = opt1.score === opt2.score;
+
+                if (opt1.score === opt2.score) {
+                    promises.push(opt1.rule);
+                } else {
+                    if (opt1.score < opt2.score) {
+                        promises.push(`${q.category}: ${opt1.label}（無理なく合わせよう）`);
+                    } else {
+                        promises.push(`${q.category}: ${opt2.label}（無理なく合わせよう）`);
+                    }
+                }
+
+                const p1Name = gameMode === 'couple' ? "プレイヤー1" : "あなた";
+                const p2Name = gameMode === 'couple' ? "プレイヤー2" : "AI彼氏";
+
+                const item = document.createElement('div');
+                item.className = "p-3 bg-slate-50 rounded-2xl border border-slate-100 text-xs space-y-2";
+                item.innerHTML = `
+                    <div class="flex items-center justify-between font-bold text-slate-700">
+                        <span>Q${idx+1}. ${q.category}</span>
+                        ${isMatch 
+                            ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i>ぴったり一致</span>' 
+                            : '<span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700"><i class="fa-solid fa-handshake mr-1"></i>違いあり</span>'}
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                        <div class="p-2 bg-white rounded-xl border border-slate-100">
+                            <span class="font-bold text-rose-500 block mb-0.5">${p1Name}</span>
+                            <span>${opt1.icon} ${opt1.label}</span>
+                        </div>
+                        <div class="p-2 bg-white rounded-xl border border-slate-100">
+                            <span class="font-bold text-indigo-500 block mb-0.5">${p2Name}</span>
+                            <span>${opt2.icon} ${opt2.label}</span>
+                        </div>
+                    </div>
+                `;
+                breakdownList.appendChild(item);
+            });
+
+            const promiseList = document.getElementById('promise-list');
+            promiseList.innerHTML = '';
+            const uniquePromises = [...new Set(promises)].slice(0, 3);
+            uniquePromises.forEach((rule) => {
+                const li = document.createElement('li');
+                li.className = "flex items-start gap-2";
+                li.innerHTML = `<i class="fa-solid fa-check text-emerald-400 mt-0.5"></i> <span>${rule}</span>`;
+                promiseList.appendChild(li);
+            });
+
+            viewResult.classList.remove('hidden');
+        }
+
+        function shareResult() {
+            const score = document.getElementById('match-score').innerText;
+            const text = `【恋のセーフゾーン診断結果】\nふたりの連絡相性一致度: ${score}%\n\nお互いの心地よい連絡頻度と距離感をゲームで楽しく診断しました！💕\n#恋のセーフゾーン`;
+
+            navigator.clipboard.writeText(text).then(() => {
+                showToast("結果文面をコピーしました！LINEで共有できます");
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast("結果文面をコピーしました！");
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
